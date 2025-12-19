@@ -21,8 +21,13 @@ export const createBooking = async (userId, bookingData) => {
     throw new AppError('Provider is not available', 403);
   }
 
+  // Generate unique booking number
+  const count = await Booking.countDocuments();
+  const bookingNumber = `BK${Date.now()}${String(count + 1).padStart(4, '0')}`;
+
   // Create booking
   const booking = await Booking.create({
+    bookingNumber,
     customerId: userId,
     providerId: provider._id,
     serviceId: service._id,

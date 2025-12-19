@@ -147,3 +147,75 @@ export const toggleServiceStatus = async (serviceId, providerId) => {
 
   return service.populate('category', 'name icon');
 };
+
+// ===================
+// ADMIN FUNCTIONS
+// ===================
+
+// Get all services for admin (no filters)
+export const getAllServicesForAdmin = async (filters = {}) => {
+  const query = {};
+
+  if (filters.category) {
+    query.category = filters.category;
+  }
+
+  if (filters.providerId) {
+    query.providerId = filters.providerId;
+  }
+
+  if (filters.isActive !== undefined) {
+    query.isActive = filters.isActive === 'true';
+  }
+
+  const page = parseInt(filters.page) || 1;
+  const limit = parseInt(filters.limit) || 20;
+  const skip = (page - 1) * limit;
+
+  const services = await Service.find(query)
+    .populate('category', 'name icon')
+    .populate({
+      path: 'providerId',
+      populate: { path: 'userId', select: 'name email' }
+    })
+    .sort({ createdAt: -1 })
+    .limit(limit)
+    .skip(skip);
+
+  const total = await Service.countDocuments(query);
+
+  return {
+    services,
+    pagination: {
+      total,
+      page,
+      pages: Math.ceil(total / limit),
+      limit,
+    },
+  };
+};
+
+// Admin: Delete any service
+export const deleteServiceByAdmin = async (serviceId) => {
+  const service = await Service.findByIdAndDelete(serviceId);
+
+  if (!service) {
+    throw new AppError('Service not found', 404);
+  }
+
+  return service;
+};
+
+// Admin: Toggle service status
+export const toggleServiceStatusByAdmin = async (serviceId) => {
+  const service = await Service.findById(serviceId);
+
+  if (!service) {
+    throw new AppError('Service not found', 404);
+  }
+
+  service.isActive = !service.isActive;
+  await service.save();
+
+  return service.populate('category', 'name icon');
+};

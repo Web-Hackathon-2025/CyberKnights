@@ -4,6 +4,7 @@ import { bookingService } from '../../services/bookingService';
 import BookingStatusBadge from '../../components/BookingStatusBadge';
 import BookingTimeline from '../../components/BookingTimeline';
 import CancelBookingModal from '../../components/CancelBookingModal';
+import ChatButton from '../../components/chat/ChatButton';
 import RatingDisplay from '../../components/RatingDisplay';
 import PriceTag from '../../components/PriceTag';
 import { formatDate, formatTime } from '../../utils/dateUtils';
@@ -232,12 +233,13 @@ const BookingDetailsPage = () => {
             </button>
           )}
 
-          <button
-            className="px-6 py-3 bg-neutral-100 text-neutral-700 rounded-xl font-semibold hover:bg-neutral-200 transition-colors flex items-center gap-2"
-          >
-            <MessageCircle className="w-5 h-5" />
-            Contact Provider
-          </button>
+          <ChatButton
+            bookingId={booking._id}
+            recipientName={booking.provider?.businessName || 'Provider'}
+            variant="outline"
+            size="lg"
+            className="rounded-xl"
+          />
         </div>
       </div>
 

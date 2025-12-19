@@ -1,15 +1,19 @@
 import { useState, useRef, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
+import { useStreamChat } from '../../contexts/StreamChatContext';
 import MegaDropdown from '../MegaDropdown';
+import { MessageCircle } from 'lucide-react';
 
 const Navbar = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isProfileOpen, setIsProfileOpen] = useState(false);
   const [isServicesDropdownOpen, setIsServicesDropdownOpen] = useState(false);
+  const [unreadCount, setUnreadCount] = useState(0);
   const profileRef = useRef(null);
   const servicesDropdownRef = useRef(null);
   const { user, logout, isAuthenticated } = useAuth();
+  const { client, isReady } = useStreamChat();
   const navigate = useNavigate();
 
   // Close dropdown when clicking outside
@@ -26,6 +30,28 @@ const Navbar = () => {
     document.addEventListener('mousedown', handleClickOutside);
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
+
+  // Track unread messages
+  useEffect(() => {
+    if (!client || !isReady) return;
+
+    const updateUnreadCount = () => {
+      const count = client.user?.total_unread_count || 0;
+      setUnreadCount(count);
+    };
+
+    // Initial count
+    updateUnreadCount();
+
+    // Listen for new messages
+    client.on('notification.message_new', updateUnreadCount);
+    client.on('notification.mark_read', updateUnreadCount);
+
+    return () => {
+      client.off('notification.message_new', updateUnreadCount);
+      client.off('notification.mark_read', updateUnreadCount);
+    };
+  }, [client, isReady]);
 
   const handleLogout = async () => {
     await logout();
@@ -47,53 +73,57 @@ const Navbar = () => {
 
           {/* Desktop Navigation */}
           <div className="hidden md:flex items-center space-x-1 relative">
-            <Link to="/" className="text-neutral-700 hover:text-primary hover:bg-primary-50 px-4 py-2 rounded-lg transition-all font-medium">
-              Home
-            </Link>
-            
-            {/* Services Dropdown */}
-            <div 
-              className="relative" 
-              ref={servicesDropdownRef}
-              onMouseEnter={() => setIsServicesDropdownOpen(true)}
-              onMouseLeave={() => setIsServicesDropdownOpen(false)}
-            >
-              <button
-                onClick={() => setIsServicesDropdownOpen(!isServicesDropdownOpen)}
-                className="text-neutral-700 hover:text-primary hover:bg-primary-50 px-4 py-2 rounded-lg transition-all font-medium flex items-center gap-1"
-              >
-                Services
-                <svg 
-                  className={`w-4 h-4 transition-transform ${isServicesDropdownOpen ? 'rotate-180' : ''}`} 
-                  fill="none" 
-                  viewBox="0 0 24 24" 
-                  stroke="currentColor"
-                >
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-                </svg>
-              </button>
-              
-              <MegaDropdown 
-                isOpen={isServicesDropdownOpen} 
-                onClose={() => setIsServicesDropdownOpen(false)} 
-              />
-            </div>
-            
-            <Link to="/how-it-works" className="text-neutral-700 hover:text-primary hover:bg-primary-50 px-4 py-2 rounded-lg transition-all font-medium">
-              How It Works
-            </Link>
-            <Link to="/for-providers" className="text-neutral-700 hover:text-primary hover:bg-primary-50 px-4 py-2 rounded-lg transition-all font-medium">
-              For Providers
-            </Link>
-
-            {isAuthenticated && (
+            {isAuthenticated ? (
               <>
+                {/* Logged in navigation */}
                 <Link 
                   to="/dashboard" 
                   className="text-neutral-700 hover:text-primary hover:bg-primary-50 px-4 py-2 rounded-lg transition-all font-medium"
                 >
                   Dashboard
                 </Link>
+                
+                {/* Services Dropdown */}
+                <div 
+                  className="relative" 
+                  ref={servicesDropdownRef}
+                  onMouseEnter={() => setIsServicesDropdownOpen(true)}
+                  onMouseLeave={() => setIsServicesDropdownOpen(false)}
+                >
+                  <button
+                    onClick={() => setIsServicesDropdownOpen(!isServicesDropdownOpen)}
+                    className="text-neutral-700 hover:text-primary hover:bg-primary-50 px-4 py-2 rounded-lg transition-all font-medium flex items-center gap-1"
+                  >
+                    Services
+                    <svg 
+                      className={`w-4 h-4 transition-transform ${isServicesDropdownOpen ? 'rotate-180' : ''}`} 
+                      fill="none" 
+                      viewBox="0 0 24 24" 
+                      stroke="currentColor"
+                    >
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                    </svg>
+                  </button>
+                  
+                  <MegaDropdown 
+                    isOpen={isServicesDropdownOpen} 
+                    onClose={() => setIsServicesDropdownOpen(false)} 
+                  />
+                </div>
+                
+                <Link 
+                  to="/inbox" 
+                  className="text-neutral-700 hover:text-primary hover:bg-primary-50 px-4 py-2 rounded-lg transition-all font-medium flex items-center gap-2 relative"
+                >
+                  <MessageCircle className="w-5 h-5" />
+                  <span>Messages</span>
+                  {unreadCount > 0 && (
+                    <span className="absolute -top-1 -right-1 bg-error text-white text-xs font-bold rounded-full w-5 h-5 flex items-center justify-center">
+                      {unreadCount > 9 ? '9+' : unreadCount}
+                    </span>
+                  )}
+                </Link>
+                
                 {user?.role === 'user' && (
                   <Link 
                     to="/bookings" 
@@ -102,6 +132,65 @@ const Navbar = () => {
                     My Bookings
                   </Link>
                 )}
+                
+                {user?.role === 'provider' && (
+                  <>
+                    <Link 
+                      to="/provider/bookings" 
+                      className="text-neutral-700 hover:text-primary hover:bg-primary-50 px-4 py-2 rounded-lg transition-all font-medium"
+                    >
+                      My Bookings
+                    </Link>
+                    <Link 
+                      to="/provider/services" 
+                      className="text-neutral-700 hover:text-primary hover:bg-primary-50 px-4 py-2 rounded-lg transition-all font-medium"
+                    >
+                      My Services
+                    </Link>
+                  </>
+                )}
+              </>
+            ) : (
+              <>
+                {/* Not logged in navigation */}
+                <Link to="/" className="text-neutral-700 hover:text-primary hover:bg-primary-50 px-4 py-2 rounded-lg transition-all font-medium">
+                  Home
+                </Link>
+                
+                {/* Services Dropdown */}
+                <div 
+                  className="relative" 
+                  ref={servicesDropdownRef}
+                  onMouseEnter={() => setIsServicesDropdownOpen(true)}
+                  onMouseLeave={() => setIsServicesDropdownOpen(false)}
+                >
+                  <button
+                    onClick={() => setIsServicesDropdownOpen(!isServicesDropdownOpen)}
+                    className="text-neutral-700 hover:text-primary hover:bg-primary-50 px-4 py-2 rounded-lg transition-all font-medium flex items-center gap-1"
+                  >
+                    Services
+                    <svg 
+                      className={`w-4 h-4 transition-transform ${isServicesDropdownOpen ? 'rotate-180' : ''}`} 
+                      fill="none" 
+                      viewBox="0 0 24 24" 
+                      stroke="currentColor"
+                    >
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                    </svg>
+                  </button>
+                  
+                  <MegaDropdown 
+                    isOpen={isServicesDropdownOpen} 
+                    onClose={() => setIsServicesDropdownOpen(false)} 
+                  />
+                </div>
+                
+                <Link to="/how-it-works" className="text-neutral-700 hover:text-primary hover:bg-primary-50 px-4 py-2 rounded-lg transition-all font-medium">
+                  How It Works
+                </Link>
+                <Link to="/for-providers" className="text-neutral-700 hover:text-primary hover:bg-primary-50 px-4 py-2 rounded-lg transition-all font-medium">
+                  For Providers
+                </Link>
               </>
             )}
           </div>
@@ -162,6 +251,19 @@ const Navbar = () => {
                       </svg>
                       View Profile
                     </Link>
+                    <Link
+                      to="/inbox"
+                      className="flex items-center gap-3 px-4 py-2.5 text-sm text-neutral-700 hover:bg-neutral-50 transition-colors relative"
+                      onClick={() => setIsProfileOpen(false)}
+                    >
+                      <MessageCircle className="w-4 h-4 text-neutral-500" />
+                      <span>Messages</span>
+                      {unreadCount > 0 && (
+                        <span className="ml-auto bg-error text-white text-xs font-bold rounded-full px-2 py-0.5">
+                          {unreadCount > 9 ? '9+' : unreadCount}
+                        </span>
+                      )}
+                    </Link>
                     {user?.role === 'user' && (
                       <Link
                         to="/bookings"
@@ -173,6 +275,30 @@ const Navbar = () => {
                         </svg>
                         My Bookings
                       </Link>
+                    )}
+                    {user?.role === 'provider' && (
+                      <>
+                        <Link
+                          to="/provider/bookings"
+                          className="flex items-center gap-3 px-4 py-2.5 text-sm text-neutral-700 hover:bg-neutral-50 transition-colors"
+                          onClick={() => setIsProfileOpen(false)}
+                        >
+                          <svg className="w-4 h-4 text-neutral-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                          </svg>
+                          My Bookings
+                        </Link>
+                        <Link
+                          to="/provider/services"
+                          className="flex items-center gap-3 px-4 py-2.5 text-sm text-neutral-700 hover:bg-neutral-50 transition-colors"
+                          onClick={() => setIsProfileOpen(false)}
+                        >
+                          <svg className="w-4 h-4 text-neutral-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 13.255A23.931 23.931 0 0112 15c-3.183 0-6.22-.62-9-1.745M16 6V4a2 2 0 00-2-2h-4a2 2 0 00-2 2v2m4 6h.01M5 20h14a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+                          </svg>
+                          My Services
+                        </Link>
+                      </>
                     )}
                     <div className="border-t border-neutral-100 my-2"></div>
                     <button
@@ -232,43 +358,37 @@ const Navbar = () => {
         {isMenuOpen && (
           <div className="md:hidden py-4 border-t border-neutral-100 bg-white">
             <div className="flex flex-col space-y-1">
-              <Link
-                to="/"
-                className="text-neutral-700 hover:text-primary hover:bg-primary-50 px-4 py-3 rounded-lg transition-all font-medium"
-                onClick={() => setIsMenuOpen(false)}
-              >
-                Home
-              </Link>
-              <Link
-                to="/services"
-                className="text-neutral-700 hover:text-primary hover:bg-primary-50 px-4 py-3 rounded-lg transition-all font-medium"
-                onClick={() => setIsMenuOpen(false)}
-              >
-                Services
-              </Link>
-              <Link
-                to="/how-it-works"
-                className="text-neutral-700 hover:text-primary hover:bg-primary-50 px-4 py-3 rounded-lg transition-all font-medium"
-                onClick={() => setIsMenuOpen(false)}
-              >
-                How It Works
-              </Link>
-              <Link
-                to="/for-providers"
-                className="text-neutral-700 hover:text-primary hover:bg-primary-50 px-4 py-3 rounded-lg transition-all font-medium"
-                onClick={() => setIsMenuOpen(false)}
-              >
-                For Providers
-              </Link>
-
-              {isAuthenticated && (
+              {isAuthenticated ? (
                 <>
+                  {/* Logged in mobile menu */}
                   <Link
                     to="/dashboard"
                     className="text-neutral-700 hover:text-primary hover:bg-primary-50 px-4 py-3 rounded-lg transition-all font-medium"
                     onClick={() => setIsMenuOpen(false)}
                   >
                     Dashboard
+                  </Link>
+                  <Link
+                    to="/services"
+                    className="text-neutral-700 hover:text-primary hover:bg-primary-50 px-4 py-3 rounded-lg transition-all font-medium"
+                    onClick={() => setIsMenuOpen(false)}
+                  >
+                    Services
+                  </Link>
+                  <Link
+                    to="/inbox"
+                    className="text-neutral-700 hover:text-primary hover:bg-primary-50 px-4 py-3 rounded-lg transition-all font-medium flex items-center justify-between"
+                    onClick={() => setIsMenuOpen(false)}
+                  >
+                    <span className="flex items-center gap-2">
+                      <MessageCircle className="w-5 h-5" />
+                      Messages
+                    </span>
+                    {unreadCount > 0 && (
+                      <span className="bg-error text-white text-xs font-bold rounded-full px-2 py-1">
+                        {unreadCount > 9 ? '9+' : unreadCount}
+                      </span>
+                    )}
                   </Link>
                   {user?.role === 'user' && (
                     <Link
@@ -279,6 +399,56 @@ const Navbar = () => {
                       My Bookings
                     </Link>
                   )}
+                  {user?.role === 'provider' && (
+                    <>
+                      <Link
+                        to="/provider/bookings"
+                        className="text-neutral-700 hover:text-primary hover:bg-primary-50 px-4 py-3 rounded-lg transition-all font-medium"
+                        onClick={() => setIsMenuOpen(false)}
+                      >
+                        My Bookings
+                      </Link>
+                      <Link
+                        to="/provider/services"
+                        className="text-neutral-700 hover:text-primary hover:bg-primary-50 px-4 py-3 rounded-lg transition-all font-medium"
+                        onClick={() => setIsMenuOpen(false)}
+                      >
+                        My Services
+                      </Link>
+                    </>
+                  )}
+                </>
+              ) : (
+                <>
+                  {/* Not logged in mobile menu */}
+                  <Link
+                    to="/"
+                    className="text-neutral-700 hover:text-primary hover:bg-primary-50 px-4 py-3 rounded-lg transition-all font-medium"
+                    onClick={() => setIsMenuOpen(false)}
+                  >
+                    Home
+                  </Link>
+                  <Link
+                    to="/services"
+                    className="text-neutral-700 hover:text-primary hover:bg-primary-50 px-4 py-3 rounded-lg transition-all font-medium"
+                    onClick={() => setIsMenuOpen(false)}
+                  >
+                    Services
+                  </Link>
+                  <Link
+                    to="/how-it-works"
+                    className="text-neutral-700 hover:text-primary hover:bg-primary-50 px-4 py-3 rounded-lg transition-all font-medium"
+                    onClick={() => setIsMenuOpen(false)}
+                  >
+                    How It Works
+                  </Link>
+                  <Link
+                    to="/for-providers"
+                    className="text-neutral-700 hover:text-primary hover:bg-primary-50 px-4 py-3 rounded-lg transition-all font-medium"
+                    onClick={() => setIsMenuOpen(false)}
+                  >
+                    For Providers
+                  </Link>
                 </>
               )}
 

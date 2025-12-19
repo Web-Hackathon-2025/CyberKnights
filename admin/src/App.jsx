@@ -12,6 +12,7 @@ import EditUserPage from './pages/EditUserPage';
 import PendingProvidersPage from './pages/PendingProvidersPage';
 import ProvidersPage from './pages/ProvidersPage';
 import CategoriesPage from './pages/CategoriesPage';
+import ServicesPage from './pages/ServicesPage';
 import ApiDocsPage from './pages/ApiDocsPage';
 
 function App() {
@@ -90,6 +91,16 @@ function App() {
             element={
               <ProtectedRoute>
                 <CategoriesPage />
+              </ProtectedRoute>
+            }
+          />
+
+          {/* Services */}
+          <Route
+            path="/services"
+            element={
+              <ProtectedRoute>
+                <ServicesPage />
               </ProtectedRoute>
             }
           />

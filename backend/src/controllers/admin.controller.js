@@ -2,6 +2,7 @@ import * as adminService from '../services/admin.service.js';
 import * as providerService from '../services/provider.service.js';
 import * as categoryService from '../services/category.service.js';
 import * as bookingService from '../services/booking.service.js';
+import * as serviceService from '../services/service.service.js';
 
 // ===================
 // USER MANAGEMENT
@@ -190,6 +191,41 @@ export const getAllBookings = async (req, res, next) => {
   try {
     const result = await bookingService.getAllBookingsForAdmin(req.query);
     res.json({ success: true, data: result });
+  } catch (error) {
+    next(error);
+  }
+};
+
+// ===================
+// SERVICE MANAGEMENT
+// ===================
+
+export const getAllServices = async (req, res, next) => {
+  try {
+    const result = await serviceService.getAllServicesForAdmin(req.query);
+    res.json({ success: true, data: result });
+  } catch (error) {
+    next(error);
+  }
+};
+
+export const deleteService = async (req, res, next) => {
+  try {
+    await serviceService.deleteServiceByAdmin(req.params.id);
+    res.json({ success: true, message: 'Service deleted successfully' });
+  } catch (error) {
+    next(error);
+  }
+};
+
+export const toggleServiceStatus = async (req, res, next) => {
+  try {
+    const service = await serviceService.toggleServiceStatusByAdmin(req.params.id);
+    res.json({ 
+      success: true, 
+      data: { service },
+      message: 'Service status updated successfully' 
+    });
   } catch (error) {
     next(error);
   }

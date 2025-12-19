@@ -92,6 +92,19 @@ router.post('/categories/seed', adminController.seedCategories);
 router.get('/bookings', adminController.getAllBookings);
 
 // ===================
+// SERVICE MANAGEMENT
+// ===================
+
+// Get all services
+router.get('/services', adminController.getAllServices);
+
+// Delete service
+router.delete('/services/:id', adminController.deleteService);
+
+// Toggle service status (activate/deactivate)
+router.put('/services/:id/toggle-status', adminController.toggleServiceStatus);
+
+// ===================
 // STATISTICS
 // ===================
 

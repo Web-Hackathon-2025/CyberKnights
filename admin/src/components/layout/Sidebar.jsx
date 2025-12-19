@@ -6,7 +6,8 @@ import {
   FileText,
   LogOut,
   Briefcase,
-  Grid3X3
+  Grid3X3,
+  Wrench
 } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { cn } from '@/utils/helpers';
@@ -20,6 +21,7 @@ export function Sidebar() {
     { name: 'Pending Providers', href: '/providers/pending', icon: UserCheck },
     { name: 'All Providers', href: '/providers', icon: Briefcase },
     { name: 'Categories', href: '/categories', icon: Grid3X3 },
+    { name: 'Services', href: '/services', icon: Wrench },
     { name: 'API Docs', href: '/api-docs', icon: FileText },
   ];
 

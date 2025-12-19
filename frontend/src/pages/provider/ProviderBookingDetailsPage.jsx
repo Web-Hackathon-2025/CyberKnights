@@ -5,6 +5,7 @@ import BookingStatusBadge from '../../components/BookingStatusBadge';
 import BookingTimeline from '../../components/BookingTimeline';
 import AcceptBookingModal from '../../components/AcceptBookingModal';
 import CancelBookingModal from '../../components/CancelBookingModal';
+import ChatButton from '../../components/chat/ChatButton';
 import PriceTag from '../../components/PriceTag';
 import { formatDate, formatTime } from '../../utils/dateUtils';
 import { 
@@ -282,12 +283,13 @@ const ProviderBookingDetailsPage = () => {
             </>
           )}
 
-          <button
-            className="px-6 py-3 bg-neutral-100 text-neutral-700 rounded-xl font-semibold hover:bg-neutral-200 transition-colors flex items-center gap-2"
-          >
-            <MessageCircle className="w-5 h-5" />
-            Contact Customer
-          </button>
+          <ChatButton
+            bookingId={booking._id}
+            recipientName={booking.customerName || 'Customer'}
+            variant="outline"
+            size="lg"
+            className="rounded-xl"
+          />
         </div>
       </div>
 

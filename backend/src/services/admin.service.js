@@ -105,26 +105,94 @@ export const deleteUser = async (userId) => {
 // ===================
 
 export const getDashboardStats = async () => {
+  const ServiceProvider = (await import('../models/ServiceProvider.model.js')).default;
+  const Service = (await import('../models/Service.model.js')).default;
+  const Booking = (await import('../models/Booking.model.js')).default;
+  const Category = (await import('../models/Category.model.js')).default;
+
   const [
     totalUsers,
+    totalCustomers,
+    totalProviders,
     totalAdmins,
     verifiedEmails,
+    pendingProviders,
+    approvedProviders,
+    totalServices,
+    activeServices,
+    totalBookings,
+    pendingBookings,
+    completedBookings,
+    totalCategories,
   ] = await Promise.all([
     User.countDocuments(),
+    User.countDocuments({ role: 'user' }),
+    User.countDocuments({ role: 'provider' }),
     User.countDocuments({ role: 'admin' }),
     User.countDocuments({ isEmailVerified: true }),
+    ServiceProvider.countDocuments({ isApproved: false }),
+    ServiceProvider.countDocuments({ isApproved: true }),
+    Service.countDocuments(),
+    Service.countDocuments({ isActive: true }),
+    Booking.countDocuments(),
+    Booking.countDocuments({ status: 'pending' }),
+    Booking.countDocuments({ status: 'completed' }),
+    Category.countDocuments(),
   ]);
 
-  // Get recent users
+  // Get recent users (last 10)
   const recentUsers = await User.find()
     .select('-password -sessions')
     .sort({ createdAt: -1 })
     .limit(10);
 
+  // Get recent bookings (last 5)
+  const recentBookings = await Booking.find()
+    .populate('customerId', 'name email')
+    .populate('providerId', 'userId')
+    .populate('serviceId', 'name')
+    .sort({ createdAt: -1 })
+    .limit(5);
+
+  // Calculate revenue (if you have payment tracking)
+  // For now, we'll estimate based on bookings
+  const completedBookingsWithServices = await Booking.find({ status: 'completed' })
+    .populate('serviceId', 'price');
+  
+  const totalRevenue = completedBookingsWithServices.reduce((sum, booking) => {
+    return sum + (booking.serviceId?.price || 0);
+  }, 0);
+
   return {
+    // User stats
     totalUsers,
+    totalCustomers,
+    totalProviders,
     totalAdmins,
     verifiedEmails,
+    
+    // Provider stats
+    pendingProviders,
+    approvedProviders,
+    
+    // Service stats
+    totalServices,
+    activeServices,
+    inactiveServices: totalServices - activeServices,
+    
+    // Booking stats
+    totalBookings,
+    pendingBookings,
+    completedBookings,
+    
+    // Category stats
+    totalCategories,
+    
+    // Revenue
+    totalRevenue,
+    
+    // Recent activity
     recentUsers,
+    recentBookings,
   };
 };

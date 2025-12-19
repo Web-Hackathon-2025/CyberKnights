@@ -1,12 +1,16 @@
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import { GoogleOAuthProvider } from '@react-oauth/google';
+import { Toaster } from 'react-hot-toast';
 import { AuthProvider } from './contexts/AuthContext';
+import { StreamChatProvider } from './contexts/StreamChatContext';
 import MainLayout from './components/layout/MainLayout';
 import AuthLayout from './components/layout/AuthLayout';
 import ProtectedRoute from './components/ProtectedRoute';
 
 // Public pages
 import LandingPage from './pages/LandingPage';
+import HowItWorksPage from './pages/HowItWorksPage';
+import ForProvidersPage from './pages/ForProvidersPage';
 
 // Auth pages
 import LoginPage from './pages/auth/LoginPage';
@@ -40,6 +44,10 @@ import BookingDetailsPage from './pages/customer/BookingDetailsPage';
 import ProviderBookingsPage from './pages/provider/BookingsPage';
 import ProviderBookingDetailsPage from './pages/provider/ProviderBookingDetailsPage';
 
+// Chat pages
+import ChatPage from './pages/ChatPage';
+import InboxPage from './pages/InboxPage';
+
 const GOOGLE_CLIENT_ID = import.meta.env.VITE_GOOGLE_CLIENT_ID || '';
 
 function App() {
@@ -47,12 +55,39 @@ function App() {
     <GoogleOAuthProvider clientId={GOOGLE_CLIENT_ID}>
       <Router>
         <AuthProvider>
-          <Routes>
+          <StreamChatProvider>
+            <Toaster 
+              position="top-right"
+              toastOptions={{
+                duration: 3000,
+                style: {
+                  background: '#363636',
+                  color: '#fff',
+                },
+                success: {
+                  duration: 3000,
+                  iconTheme: {
+                    primary: '#10b981',
+                    secondary: '#fff',
+                  },
+                },
+                error: {
+                  duration: 4000,
+                  iconTheme: {
+                    primary: '#ef4444',
+                    secondary: '#fff',
+                  },
+                },
+              }}
+            />
+            <Routes>
             {/* Routes with Main Layout (Navbar + Footer) */}
             <Route element={<MainLayout />}>
               {/* Public Routes */}
               <Route path="/" element={<LandingPage />} />
               <Route path="/unauthorized" element={<UnauthorizedPage />} />
+              <Route path="/how-it-works" element={<HowItWorksPage />} />
+              <Route path="/for-providers" element={<ForProvidersPage />} />
               
               {/* Customer Service Discovery Routes */}
               <Route path="/services" element={<ServicesPage />} />
@@ -73,6 +108,24 @@ function App() {
                 element={
                   <ProtectedRoute allowedRoles={['user']}>
                     <BookingDetailsPage />
+                  </ProtectedRoute>
+                }
+              />
+
+              {/* Chat Routes */}
+              <Route
+                path="/inbox"
+                element={
+                  <ProtectedRoute>
+                    <InboxPage />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/chat/:channelId"
+                element={
+                  <ProtectedRoute>
+                    <ChatPage />
                   </ProtectedRoute>
                 }
               />
@@ -171,7 +224,8 @@ function App() {
               <Route path="/forgot-password" element={<ForgotPasswordPage />} />
               <Route path="/reset-password/:token" element={<ResetPasswordPage />} />
             </Route>
-          </Routes>
+            </Routes>
+          </StreamChatProvider>
         </AuthProvider>
       </Router>
     </GoogleOAuthProvider>

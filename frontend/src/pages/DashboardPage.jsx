@@ -2,58 +2,54 @@ import { useEffect, useState } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import { Link, useNavigate } from 'react-router-dom';
 import providerService from '../services/providerService';
+import { bookingService } from '../services/bookingService';
+import { Calendar, Clock, MapPin, User } from 'lucide-react';
+import BookingStatusBadge from '../components/BookingStatusBadge';
 
 const DashboardPage = () => {
   const { user } = useAuth();
   const navigate = useNavigate();
   const [providerStatus, setProviderStatus] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [customerBookings, setCustomerBookings] = useState([]);
+  const [bookingStats, setBookingStats] = useState({
+    total: 0,
+    pending: 0,
+    confirmed: 0,
+    completed: 0
+  });
 
   useEffect(() => {
     if (user?.role === 'provider') {
-      checkProviderStatus();
+      // Redirect provider to provider dashboard
+      navigate('/provider/dashboard', { replace: true });
+    } else if (user?.role === 'user') {
+      loadCustomerData();
     } else {
       setLoading(false);
     }
-  }, [user]);
+  }, [user, navigate]);
 
-  const checkProviderStatus = async () => {
+  const loadCustomerData = async () => {
     try {
-      const response = await providerService.getProviderProfile();
-      if (response.success) {
-        setProviderStatus(response.data);
-        
-        console.log('Dashboard: Provider status check:', {
-          isProfileComplete: response.data.isProfileComplete,
-          isApproved: response.data.isApproved,
-          rejectedAt: response.data.rejectedAt
-        });
-        
-        // Provider flow: Complete Profile → Submit for Approval → Admin Approves → Access Dashboard
-        if (!response.data.isProfileComplete) {
-          // Step 1: Profile not complete - redirect to complete profile
-          console.log('Dashboard: Redirecting to complete-profile (not complete)');
-          navigate('/provider/complete-profile', { replace: true });
-        } else if (!response.data.isApproved && !response.data.rejectedAt) {
-          // Step 2: Profile complete but waiting for admin approval
-          console.log('Dashboard: Redirecting to pending-approval (waiting for approval)');
-          navigate('/provider/pending-approval', { replace: true });
-        } else if (response.data.rejectedAt) {
-          // Rejected - stay on dashboard with rejection info
-          console.log('Dashboard: Staying on dashboard (rejected)');
-        } else if (response.data.isApproved && response.data.isProfileComplete) {
-          // Step 3: Approved and complete - can use dashboard
-          console.log('Dashboard: Staying on dashboard (approved and complete)');
-          // Stay on dashboard
-        }
-      }
+      const response = await bookingService.getMyBookings();
+      const bookings = response.data.bookings || [];
+      setCustomerBookings(bookings.slice(0, 3)); // Show only recent 3
+      
+      // Calculate stats
+      setBookingStats({
+        total: bookings.length,
+        pending: bookings.filter(b => b.status === 'pending').length,
+        confirmed: bookings.filter(b => b.status === 'confirmed' || b.status === 'in-progress').length,
+        completed: bookings.filter(b => b.status === 'completed').length
+      });
     } catch (error) {
-      // If provider profile doesn't exist yet, they haven't registered as provider
-      console.log('No provider profile found', error);
+      console.error('Error loading customer data:', error);
     } finally {
       setLoading(false);
     }
   };
+
 
   const handleRegisterAsProvider = async () => {
     try {
@@ -72,52 +68,179 @@ const DashboardPage = () => {
     );
   }
 
-  // Email not verified warning
-  if (!user?.isEmailVerified) {
-    return (
-      <div className="min-h-screen bg-neutral-50 py-12">
-        <div className="max-w-4xl mx-auto px-4">
-          <div className="bg-yellow-50 border-2 border-yellow-300 rounded-2xl p-8 text-center">
-            <div className="w-16 h-16 bg-yellow-100 rounded-full flex items-center justify-center mx-auto mb-4">
-              <svg className="w-8 h-8 text-yellow-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
-              </svg>
-            </div>
-            <h2 className="text-2xl font-bold text-neutral-900 mb-2">Email Verification Required</h2>
-            <p className="text-neutral-600 mb-4">Please verify your email address to access all features.</p>
-            <Link to="/check-email" state={{ email: user.email }} className="inline-block bg-primary text-white px-6 py-3 rounded-lg hover:bg-primary-400 transition-colors font-medium">
-              Verify Email
-            </Link>
-          </div>
-        </div>
-      </div>
-    );
-  }
 
-  // Provider rejected
-  if (user?.role === 'provider' && providerStatus?.rejectedAt) {
+  // Customer Dashboard
+  if (user?.role === 'user') {
     return (
-      <div className="min-h-screen bg-neutral-50 py-12">
-        <div className="max-w-4xl mx-auto px-4">
-          <div className="bg-red-50 border-2 border-red-300 rounded-2xl p-8">
-            <div className="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
-              <svg className="w-8 h-8 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-              </svg>
-            </div>
-            <h2 className="text-2xl font-bold text-neutral-900 mb-2 text-center">Application Not Approved</h2>
-            <p className="text-neutral-600 mb-4 text-center">Unfortunately, your provider application was not approved.</p>
-            {providerStatus.rejectionReason && (
-              <div className="bg-white rounded-lg p-4 mb-4">
-                <p className="text-sm font-semibold text-neutral-700 mb-1">Reason:</p>
-                <p className="text-neutral-600">{providerStatus.rejectionReason}</p>
+      <div className="min-h-screen bg-neutral-50 pt-20 pb-16">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          {/* Header */}
+          <div className="mb-8">
+            <h1 className="text-3xl font-bold text-neutral-900 mb-2">
+              Welcome back, {user?.name}! 👋
+            </h1>
+            <p className="text-neutral-600">Here's an overview of your bookings and activity</p>
+          </div>
+
+          {/* Stats Grid */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+            <div className="bg-white rounded-xl p-6 border border-neutral-200">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm text-neutral-500 mb-1">Total Bookings</p>
+                  <p className="text-3xl font-bold text-neutral-900">{bookingStats.total}</p>
+                </div>
+                <div className="p-3 bg-primary-50 rounded-xl">
+                  <Calendar className="w-6 h-6 text-primary" />
+                </div>
               </div>
-            )}
-            <div className="text-center">
-              <p className="text-sm text-neutral-500 mb-4">You can browse services as a customer or contact support for more information.</p>
-              <Link to="/browse" className="inline-block bg-primary text-white px-6 py-3 rounded-lg hover:bg-primary-400 transition-colors font-medium">
-                Browse Services
-              </Link>
+            </div>
+
+            <div className="bg-white rounded-xl p-6 border border-neutral-200">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm text-neutral-500 mb-1">Pending</p>
+                  <p className="text-3xl font-bold text-neutral-900">{bookingStats.pending}</p>
+                </div>
+                <div className="p-3 bg-warning/10 rounded-xl">
+                  <Clock className="w-6 h-6 text-warning" />
+                </div>
+              </div>
+            </div>
+
+            <div className="bg-white rounded-xl p-6 border border-neutral-200">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm text-neutral-500 mb-1">Active</p>
+                  <p className="text-3xl font-bold text-neutral-900">{bookingStats.confirmed}</p>
+                </div>
+                <div className="p-3 bg-info/10 rounded-xl">
+                  <User className="w-6 h-6 text-info" />
+                </div>
+              </div>
+            </div>
+
+            <div className="bg-white rounded-xl p-6 border border-neutral-200">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm text-neutral-500 mb-1">Completed</p>
+                  <p className="text-3xl font-bold text-neutral-900">{bookingStats.completed}</p>
+                </div>
+                <div className="p-3 bg-success/10 rounded-xl">
+                  <svg className="w-6 h-6 text-success" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  </svg>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Quick Actions & Recent Bookings */}
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
+            {/* Quick Actions */}
+            <div className="bg-white rounded-xl border border-neutral-200 p-6">
+              <h2 className="text-lg font-semibold text-neutral-900 mb-4">Quick Actions</h2>
+              <div className="space-y-3">
+                <Link
+                  to="/services"
+                  className="flex items-center gap-3 p-3 bg-primary text-white rounded-xl hover:bg-primary-600 transition-colors"
+                >
+                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+                  </svg>
+                  <span className="font-medium">Browse Services</span>
+                </Link>
+                <Link
+                  to="/bookings"
+                  className="flex items-center gap-3 p-3 bg-neutral-50 rounded-xl hover:bg-neutral-100 transition-colors"
+                >
+                  <Calendar className="w-5 h-5 text-neutral-700" />
+                  <span className="font-medium text-neutral-700">View All Bookings</span>
+                </Link>
+                <Link
+                  to="/inbox"
+                  className="flex items-center gap-3 p-3 bg-neutral-50 rounded-xl hover:bg-neutral-100 transition-colors"
+                >
+                  <svg className="w-5 h-5 text-neutral-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z" />
+                  </svg>
+                  <span className="font-medium text-neutral-700">Messages</span>
+                </Link>
+              </div>
+
+              {/* Become Provider CTA */}
+              <div className="mt-6 pt-6 border-t border-neutral-200">
+                <div className="bg-gradient-to-br from-primary/10 to-secondary/10 rounded-xl p-4">
+                  <h3 className="font-semibold text-neutral-900 mb-2">Become a Provider</h3>
+                  <p className="text-sm text-neutral-600 mb-3">
+                    Start offering your services and earn on Karigar
+                  </p>
+                  <button
+                    onClick={handleRegisterAsProvider}
+                    className="w-full px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary-600 transition-colors text-sm font-medium"
+                  >
+                    Get Started
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            {/* Recent Bookings */}
+            <div className="lg:col-span-2 bg-white rounded-xl border border-neutral-200 p-6">
+              <div className="flex items-center justify-between mb-4">
+                <h2 className="text-lg font-semibold text-neutral-900">Recent Bookings</h2>
+                <Link
+                  to="/bookings"
+                  className="text-sm text-primary hover:text-primary-600 font-medium"
+                >
+                  View All →
+                </Link>
+              </div>
+
+              {customerBookings.length === 0 ? (
+                <div className="text-center py-12">
+                  <Calendar className="w-12 h-12 text-neutral-300 mx-auto mb-3" />
+                  <p className="text-neutral-600 mb-4">No bookings yet</p>
+                  <Link
+                    to="/services"
+                    className="inline-flex items-center gap-2 px-4 py-2 bg-primary text-white rounded-xl font-medium hover:bg-primary-600 transition-colors"
+                  >
+                    Browse Services
+                  </Link>
+                </div>
+              ) : (
+                <div className="space-y-4">
+                  {customerBookings.map((booking) => (
+                    <Link
+                      key={booking._id}
+                      to={`/bookings/${booking._id}`}
+                      className="block p-4 bg-neutral-50 rounded-xl hover:bg-neutral-100 transition-colors"
+                    >
+                      <div className="flex items-start justify-between mb-2">
+                        <div className="flex-1">
+                          <h3 className="font-semibold text-neutral-900 mb-1">
+                            {booking.serviceName}
+                          </h3>
+                          <p className="text-sm text-neutral-600">
+                            {booking.providerId?.businessName || booking.providerId?.userId?.name}
+                          </p>
+                        </div>
+                        <BookingStatusBadge status={booking.status} />
+                      </div>
+                      <div className="flex items-center gap-4 text-sm text-neutral-600">
+                        <div className="flex items-center gap-1">
+                          <Calendar className="w-4 h-4" />
+                          <span>{new Date(booking.scheduledDate).toLocaleDateString()}</span>
+                        </div>
+                        <div className="flex items-center gap-1">
+                          <Clock className="w-4 h-4" />
+                          <span>{booking.scheduledTime}</span>
+                        </div>
+                      </div>
+                    </Link>
+                  ))}
+                </div>
+              )}
             </div>
           </div>
         </div>
@@ -125,6 +248,7 @@ const DashboardPage = () => {
     );
   }
 
+  // Fallback for other cases (admins, etc.)
   return (
     <div className="min-h-screen bg-neutral-50 py-12">
       <div className="max-w-4xl mx-auto px-4">
@@ -144,23 +268,6 @@ const DashboardPage = () => {
             <span className="text-sm font-medium text-primary">Email Verified</span>
           </div>
         </div>
-
-        {/* Become Provider CTA (for regular users) */}
-        {user?.role === 'user' && (
-          <div className="bg-gradient-to-r from-primary to-secondary rounded-2xl shadow-sm p-8 mb-8 text-white">
-            <h2 className="text-2xl font-bold mb-3">Want to Offer Services?</h2>
-            <p className="mb-6 opacity-90">
-              Become a service provider on Karigar and connect with customers in your area. 
-              Grow your business and manage bookings easily.
-            </p>
-            <button
-              onClick={handleRegisterAsProvider}
-              className="bg-white text-primary px-6 py-3 rounded-lg hover:bg-neutral-100 transition-colors font-semibold"
-            >
-              Register as Service Provider
-            </button>
-          </div>
-        )}
 
         {/* Account Info */}
         <div className="bg-white rounded-2xl shadow-sm p-8">

@@ -140,9 +140,8 @@ const CompleteProfilePage = () => {
 
     try {
       await completeProviderProfile(formData);
-      // Update user context
-      await updateUser();
-      navigate('/provider/dashboard');
+      // Navigate to pending approval page
+      navigate('/provider/pending-approval', { replace: true });
     } catch (err) {
       setError(err.response?.data?.message || 'Failed to complete profile');
     } finally {

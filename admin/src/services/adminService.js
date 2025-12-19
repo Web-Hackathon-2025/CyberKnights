@@ -89,6 +89,24 @@ export const adminService = {
   },
 
   // ==================
+  // Service Management
+  // ==================
+  async getServices(params = {}) {
+    const response = await api.get('/admin/services', { params });
+    return response.data;
+  },
+
+  async deleteService(serviceId) {
+    const response = await api.delete(`/admin/services/${serviceId}`);
+    return response.data;
+  },
+
+  async toggleServiceStatus(serviceId) {
+    const response = await api.put(`/admin/services/${serviceId}/toggle-status`);
+    return response.data;
+  },
+
+  // ==================
   // Dashboard Stats
   // ==================
   async getDashboardStats() {

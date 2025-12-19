@@ -78,11 +78,16 @@ const bookingSchema = new mongoose.Schema({
   },
 }, { timestamps: true });
 
-// Generate booking number before saving
-bookingSchema.pre('save', async function(next) {
-  if (!this.bookingNumber) {
-    const count = await mongoose.model('Booking').countDocuments();
-    this.bookingNumber = `BK${Date.now()}${String(count + 1).padStart(4, '0')}`;
+// Generate booking number before saving (fallback if not provided)
+bookingSchema.pre('validate', async function(next) {
+  if (!this.bookingNumber && this.isNew) {
+    try {
+      const count = await mongoose.model('Booking').countDocuments();
+      this.bookingNumber = `BK${Date.now()}${String(count + 1).padStart(4, '0')}`;
+    } catch (error) {
+      console.error('Error generating booking number:', error);
+      return next(error);
+    }
   }
   next();
 });

@@ -10,7 +10,8 @@ import {
   Plus,
   Settings,
   MapPin,
-  Clock
+  Clock,
+  AlertCircle
 } from 'lucide-react';
 
 const ProviderDashboardPage = () => {
@@ -34,24 +35,38 @@ const ProviderDashboardPage = () => {
   const loadDashboardData = async () => {
     try {
       setLoading(true);
-      const [profileResponse, servicesResponse] = await Promise.all([
-        getProviderProfile(),
-        getMyServices().catch(() => ({ data: { services: [] } })),
-      ]);
-
+      const profileResponse = await getProviderProfile();
       const providerData = profileResponse.data.provider;
-      const servicesData = servicesResponse.data?.services || [];
+
+      // Check provider status and redirect if needed
+      const { isProfileComplete, isApproved, rejectedAt } = providerData;
+      
+      if (!isProfileComplete) {
+        navigate('/provider/complete-profile', { replace: true });
+        return;
+      }
+      
+      if (!isApproved && !rejectedAt) {
+        navigate('/provider/pending-approval', { replace: true });
+        return;
+      }
 
       setProfile(providerData);
-      setServices(servicesData);
 
-      setStats({
-        totalServices: servicesData.length,
-        activeServices: servicesData.filter(s => s.isActive).length,
-        totalBookings: providerData.totalBookings || 0,
-        rating: providerData.rating || 0,
-        reviews: providerData.totalReviews || 0,
-      });
+      // Load services only if approved
+      if (isApproved) {
+        const servicesResponse = await getMyServices().catch(() => ({ data: { services: [] } }));
+        const servicesData = servicesResponse.data?.services || [];
+        setServices(servicesData);
+
+        setStats({
+          totalServices: servicesData.length,
+          activeServices: servicesData.filter(s => s.isActive).length,
+          totalBookings: providerData.totalBookings || 0,
+          rating: providerData.rating || 0,
+          reviews: providerData.totalReviews || 0,
+        });
+      }
     } catch (error) {
       console.error('Failed to load dashboard:', error);
     } finally {
@@ -67,31 +82,74 @@ const ProviderDashboardPage = () => {
     );
   }
 
+  // Show rejection message if provider was rejected
+  if (profile?.rejectedAt) {
+    return (
+      <div className="min-h-screen bg-neutral-50 pt-20 pb-16">
+        <div className="max-w-4xl mx-auto px-4">
+          <div className="bg-red-50 border-2 border-red-200 rounded-2xl p-8">
+            <div className="flex items-start gap-4">
+              <div className="p-3 bg-red-100 rounded-full">
+                <AlertCircle className="w-8 h-8 text-red-600" />
+              </div>
+              <div className="flex-1">
+                <h2 className="text-2xl font-bold text-neutral-900 mb-2">Application Not Approved</h2>
+                <p className="text-neutral-600 mb-4">
+                  Unfortunately, your provider application was not approved.
+                </p>
+                {profile.rejectionReason && (
+                  <div className="bg-white rounded-lg p-4 mb-4">
+                    <p className="text-sm font-semibold text-neutral-700 mb-1">Reason:</p>
+                    <p className="text-neutral-600">{profile.rejectionReason}</p>
+                  </div>
+                )}
+                <div className="flex gap-3">
+                  <Link
+                    to="/services"
+                    className="px-6 py-2.5 bg-primary text-white rounded-xl hover:bg-primary-600 transition-colors font-medium"
+                  >
+                    Browse Services
+                  </Link>
+                  <Link
+                    to="/profile"
+                    className="px-6 py-2.5 border-2 border-neutral-300 text-neutral-700 rounded-xl hover:bg-neutral-50 transition-colors font-medium"
+                  >
+                    View Profile
+                  </Link>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   return (
-    <div className="min-h-screen bg-neutral-50">
-      {/* Header */}
-      <div className="bg-white border-b border-neutral-200">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+    <div className="min-h-screen bg-neutral-50 pt-20 pb-16">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        {/* Header */}
+        <div className="mb-8">
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
             <div>
-              <h1 className="text-2xl font-bold text-neutral-900">
-                Provider Dashboard
+              <h1 className="text-3xl font-bold text-neutral-900 mb-2">
+                Welcome back, {profile?.businessName || user?.name}! 👋
               </h1>
-              <p className="text-neutral-600 mt-1">
-                Welcome back, {profile?.businessName || user?.name}!
+              <p className="text-neutral-600">
+                Here's an overview of your services and bookings
               </p>
             </div>
             <div className="flex gap-3">
               <Link
                 to="/provider/services/create"
-                className="inline-flex items-center gap-2 px-4 py-2 bg-primary text-white rounded-xl font-medium hover:bg-primary-600 transition-colors"
+                className="inline-flex items-center gap-2 px-4 py-2.5 bg-primary text-white rounded-xl font-medium hover:bg-primary-600 transition-colors shadow-sm"
               >
                 <Plus className="w-5 h-5" />
                 Add Service
               </Link>
               <Link
                 to="/profile"
-                className="inline-flex items-center gap-2 px-4 py-2 bg-neutral-100 text-neutral-700 rounded-xl font-medium hover:bg-neutral-200 transition-colors"
+                className="inline-flex items-center gap-2 px-4 py-2.5 bg-white border border-neutral-200 text-neutral-700 rounded-xl font-medium hover:bg-neutral-50 transition-colors"
               >
                 <Settings className="w-5 h-5" />
                 Settings
@@ -99,9 +157,6 @@ const ProviderDashboardPage = () => {
             </div>
           </div>
         </div>
-      </div>
-
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Stats Grid */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
           <div className="bg-white rounded-xl p-6 border border-neutral-200">

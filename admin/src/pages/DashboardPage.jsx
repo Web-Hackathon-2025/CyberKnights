@@ -25,28 +25,28 @@ export default function DashboardPage() {
   const loadDashboardData = async () => {
     try {
       setLoading(true);
-      const [usersResponse, pendingResponse] = await Promise.all([
-        adminService.getUsers({ limit: 100 }),
-        adminService.getPendingProviders().catch(() => ({ data: { providers: [] } })),
-      ]);
-
-      const users = usersResponse.data?.users || [];
-      const pending = pendingResponse.data?.providers || [];
-      
-      const totalUsers = users.length;
-      const totalCustomers = users.filter(u => u.role === 'user').length;
-      const totalProviders = users.filter(u => u.role === 'provider').length;
-      const pendingCount = pending.length;
+      const statsResponse = await adminService.getDashboardStats();
+      const statsData = statsResponse.data || statsResponse;
 
       setStats({
-        totalUsers,
-        totalCustomers,
-        totalProviders,
-        pendingProviders: pendingCount,
+        totalUsers: statsData.totalUsers || 0,
+        totalCustomers: statsData.totalCustomers || 0,
+        totalProviders: statsData.totalProviders || 0,
+        pendingProviders: statsData.pendingProviders || 0,
+        approvedProviders: statsData.approvedProviders || 0,
+        totalServices: statsData.totalServices || 0,
+        activeServices: statsData.activeServices || 0,
+        totalBookings: statsData.totalBookings || 0,
+        completedBookings: statsData.completedBookings || 0,
+        totalRevenue: statsData.totalRevenue || 0,
       });
 
+      // Get pending providers separately for the list
+      const pendingResponse = await adminService.getPendingProviders().catch(() => ({ data: { providers: [] } }));
+      const pending = pendingResponse.data?.providers || [];
       setPendingProviders(pending.slice(0, 3));
-      setRecentUsers(users.slice(0, 5));
+      
+      setRecentUsers(statsData.recentUsers?.slice(0, 5) || []);
     } catch (error) {
       console.error('Failed to load dashboard data:', error);
     } finally {
@@ -83,13 +83,7 @@ export default function DashboardPage() {
           color="primary"
         />
         <StatCard
-          title="Customers"
-          value={stats?.totalCustomers || 0}
-          icon={Users}
-          color="success"
-        />
-        <StatCard
-          title="Providers"
+          title="Total Providers"
           value={stats?.totalProviders || 0}
           icon={Briefcase}
           color="info"
@@ -101,6 +95,57 @@ export default function DashboardPage() {
           color="warning"
           onClick={() => navigate('/providers/pending')}
         />
+        <StatCard
+          title="Total Services"
+          value={stats?.totalServices || 0}
+          icon={Briefcase}
+          color="success"
+        />
+      </div>
+
+      {/* Secondary Stats */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+        <Card>
+          <CardContent className="pt-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm text-neutral-600 mb-1">Total Bookings</p>
+                <p className="text-2xl font-bold text-neutral-900">{stats?.totalBookings || 0}</p>
+              </div>
+              <div className="w-12 h-12 bg-primary/10 rounded-xl flex items-center justify-center">
+                <CheckCircle className="w-6 h-6 text-primary" />
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardContent className="pt-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm text-neutral-600 mb-1">Completed Bookings</p>
+                <p className="text-2xl font-bold text-neutral-900">{stats?.completedBookings || 0}</p>
+              </div>
+              <div className="w-12 h-12 bg-success/10 rounded-xl flex items-center justify-center">
+                <CheckCircle className="w-6 h-6 text-success" />
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardContent className="pt-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm text-neutral-600 mb-1">Platform Revenue</p>
+                <p className="text-2xl font-bold text-neutral-900">₹{(stats?.totalRevenue || 0).toLocaleString('en-IN')}</p>
+              </div>
+              <div className="w-12 h-12 bg-warning/10 rounded-xl flex items-center justify-center">
+                <Briefcase className="w-6 h-6 text-warning" />
+              </div>
+            </div>
+          </CardContent>
+        </Card>
       </div>
 
       {/* Charts */}
