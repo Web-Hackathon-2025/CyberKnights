@@ -33,10 +33,14 @@ export const completeProviderProfile = async (userId, profileData) => {
     throw new AppError('Profile is already completed', 400);
   }
 
+  console.log('Completing profile for user:', userId, 'with data:', profileData); // Debug log
+
   // Update profile
   Object.assign(provider, profileData);
   provider.isProfileComplete = true;
   await provider.save();
+
+  console.log('Profile saved successfully. isProfileComplete:', provider.isProfileComplete); // Debug log
 
   return provider.populate('userId', 'name email');
 };

@@ -27,16 +27,27 @@ const LoginPage = () => {
       if (response.success) {
         const { user, providerStatus } = response.data;
         
+        console.log('Login response:', { user: user.role, providerStatus }); // Debug log
+        
         // Redirect based on role and status
         if (user.role === 'admin') {
           window.location.href = '/admin';
         } else if (user.role === 'provider' && providerStatus) {
           // Provider flow: redirect based on completion status
+          console.log('Provider status check:', {
+            isProfileComplete: providerStatus.isProfileComplete,
+            isApproved: providerStatus.isApproved,
+            rejectedAt: providerStatus.rejectedAt
+          });
+          
           if (!providerStatus.isProfileComplete) {
+            console.log('Redirecting to complete-profile');
             navigate('/provider/complete-profile', { replace: true });
           } else if (!providerStatus.isApproved && !providerStatus.rejectedAt) {
+            console.log('Redirecting to pending-approval');
             navigate('/provider/pending-approval', { replace: true });
           } else {
+            console.log('Redirecting to dashboard');
             navigate('/dashboard');
           }
         } else {
@@ -57,16 +68,27 @@ const LoginPage = () => {
   const handleGoogleSuccess = (response) => {
     const { user, providerStatus } = response.data;
     
+    console.log('Google login response:', { user: user.role, providerStatus }); // Debug log
+    
     // Redirect based on role and status
     if (user.role === 'admin') {
       window.location.href = '/admin';
     } else if (user.role === 'provider' && providerStatus) {
       // Provider flow: redirect based on completion status
+      console.log('Google Provider status check:', {
+        isProfileComplete: providerStatus.isProfileComplete,
+        isApproved: providerStatus.isApproved,
+        rejectedAt: providerStatus.rejectedAt
+      });
+      
       if (!providerStatus.isProfileComplete) {
+        console.log('Google: Redirecting to complete-profile');
         navigate('/provider/complete-profile', { replace: true });
       } else if (!providerStatus.isApproved && !providerStatus.rejectedAt) {
+        console.log('Google: Redirecting to pending-approval');
         navigate('/provider/pending-approval', { replace: true });
       } else {
+        console.log('Google: Redirecting to dashboard');
         navigate('/dashboard');
       }
     } else {

@@ -4,6 +4,8 @@ import { publicProviderService } from '../services/publicProviderService';
 import RatingDisplay from '../components/RatingDisplay';
 import LocationBadge from '../components/LocationBadge';
 import ServiceCard from '../components/ServiceCard';
+import BookServiceModal from '../components/BookServiceModal';
+import { useAuth } from '../contexts/AuthContext';
 import { 
   MapPin, 
   Phone, 
@@ -17,10 +19,12 @@ import {
 
 const ProviderProfilePage = () => {
   const { providerId } = useParams();
+  const { isAuthenticated, user } = useAuth();
   const [provider, setProvider] = useState(null);
   const [services, setServices] = useState([]);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState('services');
+  const [bookingModal, setBookingModal] = useState({ isOpen: false, service: null });
 
   useEffect(() => {
     if (providerId) {
@@ -236,7 +240,17 @@ const ProviderProfilePage = () => {
               ) : (
                 <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
                   {services.map((service) => (
-                    <ServiceCard key={service._id} service={service} />
+                    <div key={service._id} className="relative">
+                      <ServiceCard service={service} />
+                      {isAuthenticated && user?.role !== 'provider' && (
+                        <button
+                          onClick={() => setBookingModal({ isOpen: true, service })}
+                          className="w-full mt-3 px-4 py-2.5 bg-primary text-white rounded-lg font-medium hover:bg-primary-600 transition-colors"
+                        >
+                          Book This Service
+                        </button>
+                      )}
+                    </div>
                   ))}
                 </div>
               )}
@@ -289,6 +303,14 @@ const ProviderProfilePage = () => {
           )}
         </div>
       </div>
+
+      {/* Booking Modal */}
+      <BookServiceModal
+        isOpen={bookingModal.isOpen}
+        onClose={() => setBookingModal({ isOpen: false, service: null })}
+        service={bookingModal.service}
+        provider={provider}
+      />
     </div>
   );
 };

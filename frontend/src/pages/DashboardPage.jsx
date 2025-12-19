@@ -23,17 +23,27 @@ const DashboardPage = () => {
       if (response.success) {
         setProviderStatus(response.data);
         
+        console.log('Dashboard: Provider status check:', {
+          isProfileComplete: response.data.isProfileComplete,
+          isApproved: response.data.isApproved,
+          rejectedAt: response.data.rejectedAt
+        });
+        
         // Provider flow: Complete Profile → Submit for Approval → Admin Approves → Access Dashboard
         if (!response.data.isProfileComplete) {
           // Step 1: Profile not complete - redirect to complete profile
+          console.log('Dashboard: Redirecting to complete-profile (not complete)');
           navigate('/provider/complete-profile', { replace: true });
         } else if (!response.data.isApproved && !response.data.rejectedAt) {
           // Step 2: Profile complete but waiting for admin approval
+          console.log('Dashboard: Redirecting to pending-approval (waiting for approval)');
           navigate('/provider/pending-approval', { replace: true });
         } else if (response.data.rejectedAt) {
           // Rejected - stay on dashboard with rejection info
+          console.log('Dashboard: Staying on dashboard (rejected)');
         } else if (response.data.isApproved && response.data.isProfileComplete) {
           // Step 3: Approved and complete - can use dashboard
+          console.log('Dashboard: Staying on dashboard (approved and complete)');
           // Stay on dashboard
         }
       }

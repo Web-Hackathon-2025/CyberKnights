@@ -72,6 +72,9 @@ export const login = async (email, password, platform = 'web') => {
         isApproved: provider.isApproved,
         rejectedAt: provider.rejectedAt,
       };
+      console.log('Provider status at login:', { userId: user._id, providerStatus }); // Debug log
+    } else {
+      console.log('No provider profile found for user:', user._id); // Debug log
     }
   }
 
@@ -159,6 +162,9 @@ export const googleAuth = async (token, role, platform = 'web') => {
         isApproved: provider.isApproved,
         rejectedAt: provider.rejectedAt,
       };
+      console.log('Provider status at Google login:', { userId: user._id, providerStatus }); // Debug log
+    } else {
+      console.log('No provider profile found for Google user:', user._id); // Debug log
     }
   }
 

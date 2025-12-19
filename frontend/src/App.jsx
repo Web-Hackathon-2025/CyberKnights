@@ -33,6 +33,12 @@ import EditServicePage from './pages/provider/EditServicePage';
 import ServicesPage from './pages/ServicesPage';
 import ServiceProvidersPage from './pages/ServiceProvidersPage';
 import ProviderProfilePage from './pages/ProviderProfilePage';
+import MyBookingsPage from './pages/customer/MyBookingsPage';
+import BookingDetailsPage from './pages/customer/BookingDetailsPage';
+
+// Provider Bookings pages
+import ProviderBookingsPage from './pages/provider/BookingsPage';
+import ProviderBookingDetailsPage from './pages/provider/ProviderBookingDetailsPage';
 
 const GOOGLE_CLIENT_ID = import.meta.env.VITE_GOOGLE_CLIENT_ID || '';
 
@@ -52,6 +58,24 @@ function App() {
               <Route path="/services" element={<ServicesPage />} />
               <Route path="/services/:categorySlug" element={<ServiceProvidersPage />} />
               <Route path="/providers/:providerId" element={<ProviderProfilePage />} />
+              
+              {/* Customer Booking Routes */}
+              <Route
+                path="/bookings"
+                element={
+                  <ProtectedRoute allowedRoles={['user']}>
+                    <MyBookingsPage />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/bookings/:id"
+                element={
+                  <ProtectedRoute allowedRoles={['user']}>
+                    <BookingDetailsPage />
+                  </ProtectedRoute>
+                }
+              />
 
               {/* Protected Routes */}
               <Route
@@ -117,6 +141,22 @@ function App() {
                 element={
                   <ProtectedRoute allowedRoles={['provider']}>
                     <EditServicePage />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/provider/bookings"
+                element={
+                  <ProtectedRoute allowedRoles={['provider']}>
+                    <ProviderBookingsPage />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/provider/bookings/:id"
+                element={
+                  <ProtectedRoute allowedRoles={['provider']}>
+                    <ProviderBookingDetailsPage />
                   </ProtectedRoute>
                 }
               />
