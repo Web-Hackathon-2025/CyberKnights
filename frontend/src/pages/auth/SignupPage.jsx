@@ -61,24 +61,20 @@ const SignupPage = () => {
     });
   };
 
-  const handleGoogleSuccess = async (token) => {
-    try {
-      // Use the selected role when signing up with Google
-      const response = await googleLogin(token, formData.role);
-      if (response.success) {
-        const { user } = response.data;
-        
-        // Redirect based on role
-        if (user.role === 'admin') {
-          window.location.href = '/admin';
-        } else {
-          // Dashboard will handle provider approval status check
-          navigate('/dashboard');
-        }
-      }
-    } catch (err) {
-      setError(err.response?.data?.message || 'Google sign-up failed. Please try again.');
+  const handleGoogleSuccess = (response) => {
+    const { user } = response.data;
+    
+    // Redirect based on role
+    if (user.role === 'admin') {
+      window.location.href = '/admin';
+    } else {
+      // Dashboard will handle provider approval status check
+      navigate('/dashboard');
     }
+  };
+
+  const handleGoogleError = (error) => {
+    setError(error.response?.data?.message || 'Google sign-up failed. Please try again.');
   };
 
   return (
@@ -235,6 +231,7 @@ const SignupPage = () => {
             mode="signup" 
             role={formData.role}
             onSuccess={handleGoogleSuccess}
+            onError={handleGoogleError}
           />
 
           {/* Login Link */}

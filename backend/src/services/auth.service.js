@@ -61,10 +61,25 @@ export const login = async (email, password, platform = 'web') => {
   }
   await user.save();
 
+  // For providers, include provider profile status
+  let providerStatus = null;
+  if (user.role === 'provider') {
+    const ServiceProvider = (await import('../models/ServiceProvider.model.js')).default;
+    const provider = await ServiceProvider.findOne({ userId: user._id });
+    if (provider) {
+      providerStatus = {
+        isProfileComplete: provider.isProfileComplete,
+        isApproved: provider.isApproved,
+        rejectedAt: provider.rejectedAt,
+      };
+    }
+  }
+
   return { 
     accessToken, 
     refreshToken, 
     user: sanitizeUser(user),
+    providerStatus,
   };
 };
 
@@ -133,10 +148,25 @@ export const googleAuth = async (token, role, platform = 'web') => {
   }
   await user.save();
 
+  // For providers, include provider profile status
+  let providerStatus = null;
+  if (user.role === 'provider') {
+    const ServiceProvider = (await import('../models/ServiceProvider.model.js')).default;
+    const provider = await ServiceProvider.findOne({ userId: user._id });
+    if (provider) {
+      providerStatus = {
+        isProfileComplete: provider.isProfileComplete,
+        isApproved: provider.isApproved,
+        rejectedAt: provider.rejectedAt,
+      };
+    }
+  }
+
   return { 
     accessToken, 
     refreshToken, 
     user: sanitizeUser(user),
+    providerStatus,
   };
 };
 

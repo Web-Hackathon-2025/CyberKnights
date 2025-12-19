@@ -15,10 +15,18 @@ export const getAllCategories = async (req, res, next) => {
   }
 };
 
-// Get category by ID
+// Get category by ID or slug
 export const getCategoryById = async (req, res, next) => {
   try {
-    const category = await categoryService.getCategoryById(req.params.id);
+    const { id } = req.params;
+    let category;
+    
+    // Check if it's a MongoDB ObjectId or a slug
+    if (id.match(/^[0-9a-fA-F]{24}$/)) {
+      category = await categoryService.getCategoryById(id);
+    } else {
+      category = await categoryService.getCategoryBySlug(id);
+    }
     
     res.json({
       success: true,

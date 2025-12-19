@@ -5,7 +5,24 @@ import { body } from 'express-validator';
 
 const router = express.Router();
 
-// All routes require authentication
+// ================
+// PUBLIC ROUTES (No auth required)
+// ================
+
+// Browse providers
+router.get('/browse', providerController.getAllProviders);
+
+// Get provider public profile
+router.get('/:id/public', providerController.getProviderPublicProfile);
+
+// Get provider services (public)
+router.get('/:id/services', providerController.getProviderServices);
+
+// ================
+// PROTECTED ROUTES
+// ================
+
+// All routes below require authentication
 router.use(authenticate);
 
 // ================
@@ -60,15 +77,5 @@ router.put('/services/:id', restrictTo('provider'), providerController.updateSer
 
 // Delete service
 router.delete('/services/:id', restrictTo('provider'), providerController.deleteService);
-
-// ================
-// PUBLIC ROUTES (No auth required)
-// ================
-
-// Browse providers
-router.get('/browse', providerController.getAllProviders);
-
-// Get provider details
-router.get('/:id', providerController.getProviderById);
 
 export default router;

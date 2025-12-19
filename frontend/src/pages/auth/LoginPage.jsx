@@ -25,11 +25,20 @@ const LoginPage = () => {
       const response = await login(credentials.email, credentials.password);
 
       if (response.success) {
-        const { user } = response.data;
+        const { user, providerStatus } = response.data;
         
-        // Redirect based on role
+        // Redirect based on role and status
         if (user.role === 'admin') {
           window.location.href = '/admin';
+        } else if (user.role === 'provider' && providerStatus) {
+          // Provider flow: redirect based on completion status
+          if (!providerStatus.isProfileComplete) {
+            navigate('/provider/complete-profile', { replace: true });
+          } else if (!providerStatus.isApproved && !providerStatus.rejectedAt) {
+            navigate('/provider/pending-approval', { replace: true });
+          } else {
+            navigate('/dashboard');
+          }
         } else {
           navigate('/dashboard');
         }
@@ -46,13 +55,21 @@ const LoginPage = () => {
   };
 
   const handleGoogleSuccess = (response) => {
-    const { user } = response.data;
+    const { user, providerStatus } = response.data;
     
-    // Redirect based on role
+    // Redirect based on role and status
     if (user.role === 'admin') {
       window.location.href = '/admin';
+    } else if (user.role === 'provider' && providerStatus) {
+      // Provider flow: redirect based on completion status
+      if (!providerStatus.isProfileComplete) {
+        navigate('/provider/complete-profile', { replace: true });
+      } else if (!providerStatus.isApproved && !providerStatus.rejectedAt) {
+        navigate('/provider/pending-approval', { replace: true });
+      } else {
+        navigate('/dashboard');
+      }
     } else {
-      // Dashboard will handle provider approval status check
       navigate('/dashboard');
     }
   };

@@ -29,8 +29,8 @@ export const completeProviderProfile = async (userId, profileData) => {
     throw new AppError('Provider profile not found', 404);
   }
 
-  if (!provider.isApproved) {
-    throw new AppError('Provider must be approved before completing profile', 403);
+  if (provider.isProfileComplete) {
+    throw new AppError('Profile is already completed', 400);
   }
 
   // Update profile
@@ -94,12 +94,27 @@ export const getAllProviders = async (filters = {}) => {
   const skip = (page - 1) * limit;
 
   let sort = {};
-  if (filters.sortBy === 'rating') {
+  if (filters.sort === 'rating') {
     sort = { rating: -1 };
-  } else if (filters.sortBy === 'experience') {
+  } else if (filters.sort === 'reviews') {
+    sort = { totalReviews: -1 };
+  } else if (filters.sort === 'experience') {
     sort = { experience: -1 };
   } else {
-    sort = { createdAt: -1 };
+    sort = { rating: -1, totalReviews: -1 };
+  }
+
+  // Apply rating filter
+  if (filters.minRating) {
+    query.rating = { $gte: parseFloat(filters.minRating) };
+  }
+
+  // Apply search filter
+  if (filters.search) {
+    query.$or = [
+      { businessName: new RegExp(filters.search, 'i') },
+      { bio: new RegExp(filters.search, 'i') },
+    ];
   }
 
   const providers = await ServiceProvider.find(query)
@@ -109,10 +124,23 @@ export const getAllProviders = async (filters = {}) => {
     .limit(limit)
     .skip(skip);
 
+  // Add services count to each provider
+  const providersWithCount = await Promise.all(
+    providers.map(async (provider) => {
+      const servicesCount = await Service.countDocuments({
+        providerId: provider._id,
+        isActive: true,
+      });
+      const providerObj = provider.toObject();
+      providerObj.servicesCount = servicesCount;
+      return providerObj;
+    })
+  );
+
   const total = await ServiceProvider.countDocuments(query);
 
   return {
-    providers,
+    providers: providersWithCount,
     pagination: {
       total,
       page,
@@ -143,6 +171,33 @@ export const getProviderById = async (providerId) => {
   }).populate('category', 'name');
 
   return { provider, services };
+};
+
+// Get provider public profile (for customer view)
+export const getProviderPublicProfile = async (providerId) => {
+  const provider = await ServiceProvider.findById(providerId)
+    .populate('userId', 'name email avatar')
+    .populate('category', 'name slug icon description');
+
+  if (!provider) {
+    throw new AppError('Provider not found', 404);
+  }
+
+  if (!provider.isApproved || !provider.isActive || !provider.isProfileComplete) {
+    throw new AppError('Provider is not available', 403);
+  }
+
+  // Count services
+  const servicesCount = await Service.countDocuments({ 
+    providerId: provider._id, 
+    isActive: true 
+  });
+
+  // Add services count to provider object
+  const providerObj = provider.toObject();
+  providerObj.servicesCount = servicesCount;
+
+  return providerObj;
 };
 
 // Admin: Get pending providers
@@ -240,8 +295,21 @@ export const getAllProvidersForAdmin = async (filters = {}) => {
 
   const total = await ServiceProvider.countDocuments(query);
 
+  // Add computed status field for frontend
+  const providersWithStatus = providers.map(provider => {
+    const providerObj = provider.toObject();
+    if (providerObj.rejectedAt) {
+      providerObj.status = 'rejected';
+    } else if (providerObj.isApproved) {
+      providerObj.status = 'approved';
+    } else {
+      providerObj.status = 'pending';
+    }
+    return providerObj;
+  });
+
   return {
-    providers,
+    providers: providersWithStatus,
     pagination: {
       total,
       page,

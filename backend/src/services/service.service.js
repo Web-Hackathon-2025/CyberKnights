@@ -3,9 +3,11 @@ import ServiceProvider from '../models/ServiceProvider.model.js';
 import { AppError } from '../utils/AppError.js';
 
 // Create service
-export const createService = async (userId, serviceData) => {
-  // Get provider profile
-  const provider = await ServiceProvider.findOne({ userId });
+export const createService = async (serviceData) => {
+  const { providerId } = serviceData;
+  
+  // Verify provider exists and is approved
+  const provider = await ServiceProvider.findById(providerId);
   
   if (!provider) {
     throw new AppError('Provider profile not found', 404);
@@ -15,23 +17,14 @@ export const createService = async (userId, serviceData) => {
     throw new AppError('Provider must be approved to create services', 403);
   }
 
-  const service = await Service.create({
-    ...serviceData,
-    providerId: provider._id,
-  });
+  const service = await Service.create(serviceData);
 
   return service.populate('category', 'name icon');
 };
 
 // Get provider's services
-export const getProviderServices = async (userId) => {
-  const provider = await ServiceProvider.findOne({ userId });
-  
-  if (!provider) {
-    throw new AppError('Provider profile not found', 404);
-  }
-
-  const services = await Service.find({ providerId: provider._id })
+export const getProviderServices = async (providerId) => {
+  const services = await Service.find({ providerId })
     .populate('category', 'name icon')
     .sort({ createdAt: -1 });
 
@@ -39,20 +32,14 @@ export const getProviderServices = async (userId) => {
 };
 
 // Update service
-export const updateService = async (serviceId, userId, updates) => {
-  const provider = await ServiceProvider.findOne({ userId });
-  
-  if (!provider) {
-    throw new AppError('Provider profile not found', 404);
-  }
-
+export const updateService = async (serviceId, providerId, updates) => {
   const service = await Service.findOne({ 
     _id: serviceId, 
-    providerId: provider._id 
+    providerId 
   });
 
   if (!service) {
-    throw new AppError('Service not found', 404);
+    throw new AppError('Service not found or access denied', 404);
   }
 
   Object.assign(service, updates);
@@ -62,20 +49,14 @@ export const updateService = async (serviceId, userId, updates) => {
 };
 
 // Delete service
-export const deleteService = async (serviceId, userId) => {
-  const provider = await ServiceProvider.findOne({ userId });
-  
-  if (!provider) {
-    throw new AppError('Provider profile not found', 404);
-  }
-
+export const deleteService = async (serviceId, providerId) => {
   const service = await Service.findOneAndDelete({ 
     _id: serviceId, 
-    providerId: provider._id 
+    providerId 
   });
 
   if (!service) {
-    throw new AppError('Service not found', 404);
+    throw new AppError('Service not found or access denied', 404);
   }
 
   return service;
@@ -132,4 +113,37 @@ export const getAllServices = async (filters = {}) => {
       limit,
     },
   };
+};
+
+// Get service by ID
+export const getServiceById = async (serviceId) => {
+  const service = await Service.findOne({ _id: serviceId, isActive: true })
+    .populate('category', 'name icon')
+    .populate({
+      path: 'providerId',
+      populate: { path: 'userId', select: 'name email' }
+    });
+
+  if (!service) {
+    throw new AppError('Service not found', 404);
+  }
+
+  return service;
+};
+
+// Toggle service status
+export const toggleServiceStatus = async (serviceId, providerId) => {
+  const service = await Service.findOne({ 
+    _id: serviceId, 
+    providerId 
+  });
+
+  if (!service) {
+    throw new AppError('Service not found or access denied', 404);
+  }
+
+  service.isActive = !service.isActive;
+  await service.save();
+
+  return service.populate('category', 'name icon');
 };

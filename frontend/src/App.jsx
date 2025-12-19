@@ -24,6 +24,15 @@ import UnauthorizedPage from './pages/UnauthorizedPage';
 // Provider pages
 import PendingApprovalPage from './pages/provider/PendingApprovalPage';
 import CompleteProfilePage from './pages/provider/CompleteProfilePage';
+import ProviderDashboardPage from './pages/provider/ProviderDashboardPage';
+import ProviderServicesPage from './pages/provider/ServicesPage';
+import CreateServicePage from './pages/provider/CreateServicePage';
+import EditServicePage from './pages/provider/EditServicePage';
+
+// Customer pages
+import ServicesPage from './pages/ServicesPage';
+import ServiceProvidersPage from './pages/ServiceProvidersPage';
+import ProviderProfilePage from './pages/ProviderProfilePage';
 
 const GOOGLE_CLIENT_ID = import.meta.env.VITE_GOOGLE_CLIENT_ID || '';
 
@@ -38,6 +47,11 @@ function App() {
               {/* Public Routes */}
               <Route path="/" element={<LandingPage />} />
               <Route path="/unauthorized" element={<UnauthorizedPage />} />
+              
+              {/* Customer Service Discovery Routes */}
+              <Route path="/services" element={<ServicesPage />} />
+              <Route path="/services/:categorySlug" element={<ServiceProvidersPage />} />
+              <Route path="/providers/:providerId" element={<ProviderProfilePage />} />
 
               {/* Protected Routes */}
               <Route
@@ -59,6 +73,14 @@ function App() {
 
               {/* Provider Routes */}
               <Route
+                path="/provider/pending-approval"
+                element={
+                  <ProtectedRoute allowedRoles={['provider']}>
+                    <PendingApprovalPage />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
                 path="/provider/complete-profile"
                 element={
                   <ProtectedRoute allowedRoles={['provider']}>
@@ -67,10 +89,34 @@ function App() {
                 }
               />
               <Route
-                path="/provider/pending-approval"
+                path="/provider/dashboard"
                 element={
                   <ProtectedRoute allowedRoles={['provider']}>
-                    <PendingApprovalPage />
+                    <ProviderDashboardPage />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/provider/services"
+                element={
+                  <ProtectedRoute allowedRoles={['provider']}>
+                    <ProviderServicesPage />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/provider/services/create"
+                element={
+                  <ProtectedRoute allowedRoles={['provider']}>
+                    <CreateServicePage />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/provider/services/:id/edit"
+                element={
+                  <ProtectedRoute allowedRoles={['provider']}>
+                    <EditServicePage />
                   </ProtectedRoute>
                 }
               />

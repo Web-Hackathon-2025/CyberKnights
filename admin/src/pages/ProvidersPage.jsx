@@ -25,7 +25,9 @@ export default function ProvidersPage() {
     try {
       setLoading(true);
       const response = await adminService.getAllProviders();
-      setProviders(response.data?.providers || []);
+      const providersData = response.data?.providers || [];
+      console.log('Providers loaded:', providersData); // Debug log
+      setProviders(providersData);
     } catch (error) {
       console.error('Failed to load providers:', error);
     } finally {

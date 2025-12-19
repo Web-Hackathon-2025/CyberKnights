@@ -95,6 +95,34 @@ export const getProviderById = async (req, res, next) => {
   }
 };
 
+// Get provider public profile
+export const getProviderPublicProfile = async (req, res, next) => {
+  try {
+    const provider = await providerService.getProviderPublicProfile(req.params.id);
+    
+    res.json({
+      success: true,
+      data: { provider },
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+// Get provider services (public)
+export const getProviderServices = async (req, res, next) => {
+  try {
+    const services = await serviceService.getServicesByProviderId(req.params.id);
+    
+    res.json({
+      success: true,
+      data: { services },
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
 // Create service
 export const createService = async (req, res, next) => {
   try {
