@@ -1,8 +1,8 @@
 {
-  "name": "hackathon-admin",
+  "name": "karigar-admin",
   "private": true,
   "version": "1.0.0",
-  "description": "Hackathon Admin Panel",
+  "description": "Karigar Admin Panel",
   "type": "module",
   "scripts": {
     "dev": "vite",

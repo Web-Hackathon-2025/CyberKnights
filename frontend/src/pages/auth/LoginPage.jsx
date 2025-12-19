@@ -52,6 +52,7 @@ const LoginPage = () => {
     if (user.role === 'admin') {
       window.location.href = '/admin';
     } else {
+      // Dashboard will handle provider approval status check
       navigate('/dashboard');
     }
   };
@@ -68,9 +69,9 @@ const LoginPage = () => {
           <div className="text-center mb-8">
             <Link to="/" className="inline-flex items-center justify-center space-x-2 mb-6">
               <div className="w-12 h-12 bg-primary rounded-lg flex items-center justify-center">
-                <span className="text-white font-bold text-2xl">A</span>
+                <span className="text-white font-bold text-2xl">K</span>
               </div>
-              <span className="text-2xl font-bold text-primary">App</span>
+              <span className="text-2xl font-bold text-primary">Karigar</span>
             </Link>
             <h2 className="text-3xl font-bold text-neutral-900">Welcome Back</h2>
             <p className="text-neutral-500 mt-2">Sign in to your account</p>

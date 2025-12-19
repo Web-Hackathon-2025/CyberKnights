@@ -1,8 +1,8 @@
 {
-  "name": "hackathon-frontend",
+  "name": "karigar-frontend",
   "private": true,
   "version": "1.0.0",
-  "description": "Hackathon Frontend",
+  "description": "Karigar Frontend",
   "type": "module",
   "scripts": {
     "dev": "vite",

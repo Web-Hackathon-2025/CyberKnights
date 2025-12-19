@@ -9,12 +9,17 @@ const GoogleOAuthButton = ({ mode = 'signin', role = 'user', onSuccess, onError 
   const handleSuccess = async (credentialResponse) => {
     setLoading(true);
     try {
-      // credentialResponse.credential contains the ID token (JWT)
-      const response = await googleLogin(credentialResponse.credential, role);
+      // credentialResponse.credential contains the ID token (JWT string)
+      const token = credentialResponse.credential;
+      if (!token || typeof token !== 'string') {
+        throw new Error('Invalid Google credential');
+      }
+      const response = await googleLogin(token, role);
       if (onSuccess) {
         onSuccess(response);
       }
     } catch (error) {
+      console.error('Google OAuth Error:', error);
       if (onError) {
         onError(error);
       }

@@ -29,7 +29,7 @@ export function UserStatsChart({ data }) {
                 borderRadius: '8px'
               }}
             />
-            <Bar dataKey="users" fill="#008080" radius={[8, 8, 0, 0]} />
+            <Bar dataKey="users" fill="#0284C7" radius={[8, 8, 0, 0]} />
           </BarChart>
         </ResponsiveContainer>
       </CardContent>

@@ -9,6 +9,10 @@ import UsersPage from './pages/UsersPage';
 import UserDetailsPage from './pages/UserDetailsPage';
 import CreateUserPage from './pages/CreateUserPage';
 import EditUserPage from './pages/EditUserPage';
+import PendingProvidersPage from './pages/PendingProvidersPage';
+import ProvidersPage from './pages/ProvidersPage';
+import CategoriesPage from './pages/CategoriesPage';
+import ApiDocsPage from './pages/ApiDocsPage';
 
 function App() {
   return (
@@ -27,6 +31,8 @@ function App() {
               </ProtectedRoute>
             }
           />
+          
+          {/* Users */}
           <Route
             path="/users"
             element={
@@ -56,6 +62,44 @@ function App() {
             element={
               <ProtectedRoute>
                 <EditUserPage />
+              </ProtectedRoute>
+            }
+          />
+
+          {/* Providers */}
+          <Route
+            path="/providers/pending"
+            element={
+              <ProtectedRoute>
+                <PendingProvidersPage />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/providers"
+            element={
+              <ProtectedRoute>
+                <ProvidersPage />
+              </ProtectedRoute>
+            }
+          />
+
+          {/* Categories */}
+          <Route
+            path="/categories"
+            element={
+              <ProtectedRoute>
+                <CategoriesPage />
+              </ProtectedRoute>
+            }
+          />
+
+          {/* API Docs */}
+          <Route
+            path="/api-docs"
+            element={
+              <ProtectedRoute>
+                <ApiDocsPage />
               </ProtectedRoute>
             }
           />

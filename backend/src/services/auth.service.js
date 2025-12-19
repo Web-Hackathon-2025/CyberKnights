@@ -23,6 +23,16 @@ export const signup = async (data) => {
   const verificationToken = generateEmailToken(user._id, 'email-verification');
   await emailService.sendVerificationEmail(user.email, verificationToken, name);
 
+  // If signing up as provider, create provider profile
+  if (role === 'provider') {
+    const ServiceProvider = (await import('../models/ServiceProvider.model.js')).default;
+    await ServiceProvider.create({
+      userId: user._id,
+      isApproved: false,
+      isProfileComplete: false,
+    });
+  }
+
   return { 
     message: 'Signup successful. Please check your email to verify your account.',
     userId: user._id,
@@ -70,7 +80,13 @@ export const googleAuth = async (token, role, platform = 'web') => {
   let isNewUser = false;
 
   if (!user) {
-    if (role === 'admin') throw new AppError('Cannot signup as admin', 403);
+    // Validate role
+    if (role === 'admin') {
+      throw new AppError('Cannot signup as admin', 403);
+    }
+    if (role && !['user', 'provider'].includes(role)) {
+      throw new AppError('Invalid role. Must be user or provider', 400);
+    }
 
     const userName = given_name 
       ? `${given_name}${family_name ? ' ' + family_name : ''}`
@@ -87,6 +103,16 @@ export const googleAuth = async (token, role, platform = 'web') => {
 
     isNewUser = true;
     await emailService.sendWelcomeEmail(user.email, user.name);
+
+    // If signing up as provider, create provider profile
+    if (role === 'provider') {
+      const ServiceProvider = (await import('../models/ServiceProvider.model.js')).default;
+      await ServiceProvider.create({
+        userId: user._id,
+        isApproved: false,
+        isProfileComplete: false,
+      });
+    }
   }
 
   if (!user.googleId) {

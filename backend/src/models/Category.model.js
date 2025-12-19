@@ -9,7 +9,6 @@ const categorySchema = new mongoose.Schema({
   },
   slug: {
     type: String,
-    required: true,
     unique: true,
     lowercase: true,
   },
@@ -31,9 +30,9 @@ const categorySchema = new mongoose.Schema({
   },
 }, { timestamps: true });
 
-// Auto-generate slug from name
-categorySchema.pre('save', function(next) {
-  if (this.isModified('name')) {
+// Auto-generate slug from name (runs before validation)
+categorySchema.pre('validate', function(next) {
+  if (this.isModified('name') || !this.slug) {
     this.slug = this.name
       .toLowerCase()
       .replace(/[^a-z0-9]+/g, '-')

@@ -46,7 +46,7 @@ const VerifyEmailPage = () => {
           {/* Logo */}
           <Link to="/" className="inline-flex items-center justify-center space-x-2 mb-8">
             <div className="w-12 h-12 bg-primary rounded-lg flex items-center justify-center">
-              <span className="text-white font-bold text-2xl">T</span>
+              <span className="text-white font-bold text-2xl">K</span>
             </div>
             <span className="text-2xl font-bold text-primary">Karigar</span>
           </Link>

@@ -33,9 +33,9 @@ export function ActivityChart({ data }) {
             <Line 
               type="monotone" 
               dataKey="visits" 
-              stroke="#008080" 
+              stroke="#0284C7" 
               strokeWidth={2}
-              dot={{ fill: '#008080', r: 4 }}
+              dot={{ fill: '#0284C7', r: 4 }}
             />
           </LineChart>
         </ResponsiveContainer>

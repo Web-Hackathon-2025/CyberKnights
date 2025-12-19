@@ -23,6 +23,7 @@ import UnauthorizedPage from './pages/UnauthorizedPage';
 
 // Provider pages
 import PendingApprovalPage from './pages/provider/PendingApprovalPage';
+import CompleteProfilePage from './pages/provider/CompleteProfilePage';
 
 const GOOGLE_CLIENT_ID = import.meta.env.VITE_GOOGLE_CLIENT_ID || '';
 
@@ -57,6 +58,14 @@ function App() {
               />
 
               {/* Provider Routes */}
+              <Route
+                path="/provider/complete-profile"
+                element={
+                  <ProtectedRoute allowedRoles={['provider']}>
+                    <CompleteProfilePage />
+                  </ProtectedRoute>
+                }
+              />
               <Route
                 path="/provider/pending-approval"
                 element={
